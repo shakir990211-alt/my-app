@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Detail | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <div class="product-detail">
+    <div>
+      <div class="main-image" id="mainImage">📦</div>
+      <div class="desc" id="productDesc"></div>
+    </div>
+    <div class="meta">
+      <h1 id="productTitle">Loading...</h1>
+      <div><span class="stars" id="productStars">★ 0</span> <span style="color:#565959" id="productReviewCount">(0 reviews)</span> &nbsp;<a href="#" class="reviews-link" id="reviewsLink">See all reviews</a></div>
+      <div class="price-row" id="productPriceRow">₹0 <span class="old" id="productOldPrice"></span></div>
+      <div class="delivery" id="productDelivery">FREE delivery Tomorrow</div>
+      <label style="font-weight:700;margin-right:8px">Qty:</label>
+      <select class="qty-select" id="qtySelect"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>10</option></select>
+      <div class="btn-group">
+        <a class="btn btn-orange" id="buyNowBtn">Buy Now</a>
+        <button class="btn" id="addToCartBtn">Add to Cart</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="reviews-section">
+    <h2>Customer Reviews</h2>
+    <div id="reviewsList"></div>
+    <div class="review-form">
+      <h3 style="margin-bottom:10px">Write a review</h3>
+      <div class="stars-input" id="starsInput"><span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span></div>
+      <textarea class="form-control" id="reviewComment" placeholder="Your review..." rows="3"></textarea>
+      <div class="btn-group" style="margin-top:10px"><button class="btn btn-orange" id="submitReview">Submit Review</button></div>
+      <div id="reviewMsg" class="helper"></div>
+    </div>
+  </div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+let selectedRating = 0;
+let currentProduct = null;
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function emojiFor(c){ const m = { Electronics:'📱', Mobiles:'📱', Fashion:'👕', 'Home & Kitchen':'🏠', Beauty:'💄', Sports:'🏀', Toys:'🧸', Books:'📚', Grocery:'🥑' }; return m[c] || '📦'; }
+function render(p){
+  currentProduct = p;
+  document.getElementById('mainImage').textContent = emojiFor(p.category);
+  document.getElementById('productTitle').textContent = p.title;
+  document.getElementById('productStars').textContent = '★ ' + p.rating;
+  document.getElementById('productReviewCount').textContent = '(' + (p.reviews_count || 0) + ' reviews)';
+  document.getElementById('productPriceRow').innerHTML = formatPrice(p.price) + (p.price > 500 ? ' <span class="old">M.R.P: ' + formatPrice(Math.round(p.price * 1.15)) + '</span>' : '');
+  document.getElementById('productDelivery').textContent = 'FREE delivery ' + new Date(Date.now() + 86400000).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+  document.getElementById('productDesc').textContent = p.description || 'No description available.';
+  document.title = p.title + ' | Amazon Clone';
+  loadReviews(p.id);
+}
+async function loadReviews(pid){
+  try {
+    const { reviews } = await reviewApi.list(pid);
+    const el = document.getElementById('reviewsList');
+    el.innerHTML = reviews.length ? reviews.map(r => `<div class="review"><div style="display:flex;justify-content:space-between"><span class="reviewer">${esc(r.name)}</span><span class="date">${new Date(r.created_at).toLocaleDateString()}</span></div><div><span class="rating">★ ${r.rating}</span></div><div style="margin-top:6px">${esc(r.comment)}</div></div>`).join('') : '<div class="helper">No reviews yet.</div>';
+  } catch (e) {}
+}
+function initStars(){
+  const stars = document.querySelectorAll('#starsInput .star');
+  stars.forEach(s => {
+    s.onmouseover = () => { stars.forEach(st => st.classList.toggle('filled', parseInt(st.dataset.val) <= parseInt(s.dataset.val))); };
+    s.onmouseout = () => { stars.forEach(st => st.classList.toggle('filled', parseInt(st.dataset.val) <= selectedRating)); };
+    s.onclick = () => { selectedRating = parseInt(s.dataset.val); stars.forEach(st => st.classList.toggle('filled', parseInt(st.dataset.val) <= selectedRating)); };
+  });
+}
+document.getElementById('submitReview').onclick = async () => {
+  if (!localStorage.getItem('amz_token')) { showToast('Please login to write a review'); return; }
+  if (!selectedRating) { showToast('Please select a rating'); return; }
+  try {
+    await reviewApi.add({ product_id: currentProduct.id, rating: selectedRating, comment: document.getElementById('reviewComment').value });
+    showToast('Review submitted');
+    document.getElementById('reviewComment').value = '';
+    loadReviews(currentProduct.id);
+  } catch (e) { alert(e.message); }
+};
+document.getElementById('addToCartBtn').onclick = async () => {
+  if (!currentProduct) return;
+  try {
+    await cartApi.add({ product_id: currentProduct.id, quantity: parseInt(document.getElementById('qtySelect').value) });
+    showToast('Added to cart');
+    const c = await cartApi.get();
+    document.getElementById('cartCount').textContent = (c.cart || []).length;
+  } catch (e) { alert(e.message); }
+};
+document.getElementById('buyNowBtn').onclick = async () => {
+  if (!currentProduct) return;
+  try {
+    await cartApi.add({ product_id: currentProduct.id, quantity: parseInt(document.getElementById('qtySelect').value) });
+    location.href = '/checkout.html';
+  } catch (e) { alert(e.message); }
+};
+document.getElementById('reviewsLink').onclick = (e) => { e.preventDefault(); document.getElementById('starsInput').scrollIntoView({ behavior: 'smooth' }); };
+(function(){
+  const dataEl = document.getElementById('product-data');
+  if (dataEl) { render(JSON.parse(dataEl.textContent)); initStars(); }
+  else {
+    const id = location.pathname.split('/').pop();
+    productApi.get(id).then(({ product }) => { render(product); initStars(); }).catch(() => { document.getElementById('productTitle').textContent = 'Product not found'; });
+  }
+})();
+</script>
+</body>
+</html>

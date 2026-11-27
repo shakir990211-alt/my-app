@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon.in: Low Prices in Electronics, Books, Sports & more</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <div class="section" style="background:#fff2cc;border:1px solid #e3caaa;color:#333;">
+    <a href="/today-deals.html" style="color:#111;font-weight:700">Today's Deals</a> &nbsp;|&nbsp;
+    <a href="/electronics.html">Electronics</a> &nbsp;|&nbsp;
+    <a href="/fashion.html">Fashion</a> &nbsp;|&nbsp;
+    <a href="/home-kitchen.html">Home &amp; Kitchen</a> &nbsp;|&nbsp;
+    <a href="/beauty.html">Beauty</a> &nbsp;|&nbsp;
+    <a href="/sports.html">Sports</a> &nbsp;|&nbsp;
+    <a href="/toys.html">Toys</a> &nbsp;|&nbsp;
+    <a href="/books.html">Books</a> &nbsp;|&nbsp;
+    <a href="/grocery.html">Grocery</a> &nbsp;|&nbsp;
+    <a href="/mobiles.html">Mobiles</a>
+  </div>
+
+  <div class="category-pills" id="categoryPills"></div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <h2 class="page-title">Recommended for you</h2>
+    <a href="/search.html" class="btn">See more</a>
+  </div>
+  <div class="product-grid" id="productGrid"></div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+const EMOJI = { Electronics:'📱', Mobiles:'📱', Fashion:'👕', 'Home & Kitchen':'🏠', Beauty:'💄', Sports:'🏀', Toys:'🧸', Books:'📚', Grocery:'🥑' };
+function emojiFor(c){ return EMOJI[c] || '📦'; }
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function cardHtml(p){
+  return `<div class="product-card" style="cursor:pointer" onclick="location.href='/product/${p.id}'">
+    <div class="product-image">${emojiFor(p.category)}</div>
+    <div class="product-title">${esc(p.title)}</div>
+    <div class="product-rating">★ ${p.rating} (${p.reviews_count || 0})</div>
+    <div class="product-price">${formatPrice(p.price)}</div>
+    <button class="add-to-cart" onclick="event.stopPropagation(); addToCart(${p.id})">Add to Cart</button>
+  </div>`;
+}
+async function loadHome(){
+  const grid = document.getElementById('productGrid');
+  const pills = document.getElementById('categoryPills');
+  const cats = ['Electronics','Mobiles','Fashion','Home & Kitchen','Beauty','Sports','Toys','Books','Grocery'];
+  pills.innerHTML = cats.map(c => `<span class="pill" onclick="location.href='/search.html?category=' + encodeURIComponent('${c.replace(/&/g,'&amp;')}')">${esc(c)}</span>`).join('');
+  try {
+    const { products } = await productApi.list({ limit: 24 });
+    grid.innerHTML = products.length ? products.map(cardHtml).join('') : '<div class="empty-state"><h2>No products found</h2></div>';
+  } catch (e) {
+    grid.innerHTML = '<div class="empty-state"><h2>Unable to load products</h2></div>';
+  }
+}
+async function addToCart(id){
+  try {
+    await cartApi.add({ product_id: id, quantity: 1 });
+    showToast('Added to cart');
+    const c = await cartApi.get();
+    document.getElementById('cartCount').textContent = (c.cart || []).length;
+  } catch (e) { alert(e.message); }
+}
+loadHome();
+</script>
+</body>
+</html>

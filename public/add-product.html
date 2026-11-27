@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add a Product | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main" style="max-width:600px">
+  <h2 class="page-title">Add a Product</h2>
+  <div class="section">
+    <form id="prodForm">
+      <div class="form-group"><label>Product Title</label><input type="text" class="form-control" name="title" required></div>
+      <div class="form-group"><label>Description</label><textarea class="form-control" name="description" rows="3" required></textarea></div>
+      <div class="form-group"><label>Price (₹)</label><input type="number" class="form-control" name="price" min="0" step="0.01" required></div>
+      <div class="form-row">
+        <div class="form-group"><label>Category</label><select class="form-control" name="category" required><option>Electronics</option><option>Mobiles</option><option>Fashion</option><option>Home & Kitchen</option><option>Beauty</option><option>Sports</option><option>Toys</option><option>Books</option><option>Grocery</option></select></div>
+        <div class="form-group"><label>Stock</label><input type="number" class="form-control" name="stock" min="0" value="0" required></div>
+      </div>
+      <div class="form-group"><label>Image URL</label><input type="url" class="form-control" name="image" placeholder="/images/placeholder.jpg"></div>
+      <div class="btn-group"><button type="submit" class="btn btn-orange">List Product</button></div>
+      <div id="prodMsg" class="helper" style="margin-top:10px"></div>
+    </form>
+  </div>
+  <p class="helper" style="margin-top:14px">New products get their own detail page automatically at <code>/product/&lt;id&gt;</code>.</p>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+document.getElementById('prodForm').onsubmit = async (e) => {
+  e.preventDefault();
+  try { requireAuth(); } catch {}
+  const fd = new FormData(e.target);
+  const user = getUser();
+  if (!user || (user.role !== 'seller' && user.role !== 'admin')) { document.getElementById('prodMsg').textContent = 'Seller account required.'; document.getElementById('prodMsg').style.color = '#b12704'; return; }
+  try {
+    await productApi.create({ title: fd.get('title'), description: fd.get('description'), price: parseFloat(fd.get('price')), category: fd.get('category'), stock: parseInt(fd.get('stock') || '0'), image: fd.get('image') || '/images/placeholder.jpg' });
+    document.getElementById('prodMsg').textContent = 'Product listed! It now has its own product page.';
+    document.getElementById('prodMsg').style.color = '#188a18';
+    document.getElementById('prodForm').reset();
+  } catch (err) { document.getElementById('prodMsg').textContent = err.message; document.getElementById('prodMsg').style.color = '#b12704'; }
+};
+</script>
+</body>
+</html>

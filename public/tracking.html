@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Tracking | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main" style="max-width:600px">
+  <h2 class="page-title">Track Your Order</h2>
+  <div class="section" id="trackBox">
+    <div class="empty-state"><h2>Loading...</h2></div>
+  </div>
+  <p class="helper">Enter your order ID above or visit <a href="/orders.html">My Orders</a> to track a shipment.</p>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const id = params.get('id');
+async function load(){
+  try { requireAuth(); } catch {}
+  if (!id) {
+    document.getElementById('trackBox').innerHTML = '<div class="section"><h3>Track by Order ID</h3><p class="helper">Open an order from My Orders to see tracking details.</p></div>';
+    return;
+  }
+  try {
+    const { tracking } = await orderApi.tracking(id);
+    document.getElementById('trackBox').innerHTML = `<div class="section"><h3>Order #${id}</h3><div class="row"><span>Tracking Number</span><span>${tracking.number}</span></div><div class="row"><span>Status</span><span class="badge badge-shipped">${tracking.status}</span></div><div class="row"><span>Estimated Delivery</span><span>${tracking.estimatedDelivery}</span></div></div>`;
+  } catch (e) {
+    document.getElementById('trackBox').innerHTML = '<div class="section"><div class="empty-state"><h2>Order not found</h2></div></div>';
+  }
+}
+load();
+</script>
+</body>
+</html>

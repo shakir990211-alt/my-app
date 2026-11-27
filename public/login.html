@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main" style="max-width:460px">
+  <div class="section">
+    <h2 style="margin-bottom:18px">Sign In</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" class="form-control" name="email" required placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" class="form-control" name="password" required>
+      </div>
+      <div class="btn-group">
+        <button type="submit" class="btn btn-orange" style="width:100%">Sign In</button>
+      </div>
+      <div id="loginMsg" class="text-danger" style="margin-top:12px"></div>
+    </form>
+    <p class="helper" style="margin-top:16px">New to Amazon? <a href="/signup.html">Create your account</a></p>
+    <p class="helper"><a href="/forgot-password.html">Forgot your password?</a></p>
+  </div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+document.getElementById('loginForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = { email: fd.get('email'), password: fd.get('password') };
+  try {
+    const { token, user } = await authApi.login(data);
+    setSession(token, user);
+    const next = new URLSearchParams(location.search).get('next');
+    location.href = next || '/';
+  } catch (e) {
+    document.getElementById('loginMsg').textContent = e.message;
+  }
+};
+</script>
+</body>
+</html>

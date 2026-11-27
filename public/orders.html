@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Orders | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <h2 class="page-title">My Orders</h2>
+  <div id="ordersList"></div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+async function load(){
+  try { requireAuth(); } catch {}
+  try {
+    const { orders } = await orderApi.list();
+    const el = document.getElementById('ordersList');
+    if (!orders.length) { el.innerHTML = '<div class="empty-state"><h2>No orders yet</h2></div>'; return; }
+    el.innerHTML = orders.map(o => `<div class="section" style="padding:14px"><div style="display:flex;justify-content:space-between;align-items:center"><b>Order #${o.id}</b><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></div><div style="margin-top:8px;font-size:14px;color:#333">${o.items.map(i => esc(i.title) + ' x' + i.quantity).join(', ')}</div><div class="row" style="margin-top:10px"><span>Order Total</span><span style="font-weight:700">${formatPrice(o.total)}</span></div><div style="margin-top:10px"><a href="/tracking.html?id=${o.id}" class="btn btn-outline" style="padding:8px 14px">Track Order</a> &nbsp; <a href="/product/1" class="btn btn-outline" style="padding:8px 14px;font-size:13px">Buy Again</a></div></div>`).join('');
+  } catch (e) {
+    if (/401|403/.test(e.message)) location.href = '/login.html';
+    else alert(e.message);
+  }
+}
+load();
+</script>
+</body>
+</html>

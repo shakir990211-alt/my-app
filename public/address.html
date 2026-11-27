@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Address | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main" style="max-width:700px">
+  <h2 class="page-title">Manage Address</h2>
+  <div class="section">
+    <h3>Your Address</h3>
+    <form id="addrForm">
+      <div class="form-row">
+        <div class="form-group"><label>Type</label><select class="form-control" name="type"><option>Home</option><option>Work</option></select></div>
+        <div class="form-group"><label>Name</label><input type="text" class="form-control" name="name" required></div>
+      </div>
+      <div class="form-group"><label>Street Address</label><input type="text" class="form-control" name="street" required></div>
+      <div class="form-row">
+        <div class="form-group"><label>City</label><input type="text" class="form-control" name="city" required></div>
+        <div class="form-group"><label>State</label><input type="text" class="form-control" name="state" required></div>
+        <div class="form-group"><label>Zip</label><input type="text" class="form-control" name="zip" required></div>
+      </div>
+      <div class="form-group"><label>Phone</label><input type="text" class="form-control" name="phone" required></div>
+      <div class="btn-group"><button type="submit" class="btn btn-orange">Save Address</button></div>
+      <div id="addrMsg" class="helper" style="margin-top:10px"></div>
+    </form>
+  </div>
+  <div style="margin-top:16px"><a href="/account.html" class="btn btn-outline">Back to Account</a> &nbsp; <a href="/checkout.html" class="btn btn-outline">Proceed to Checkout</a></div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+function esc(t){ return String(t).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+async function load(){
+  try { requireAuth(); } catch {}
+  try {
+    const { addresses } = await addressApi.list();
+    const addr = (addresses && addresses[0]) || null;
+    const form = document.getElementById('addrForm');
+    if (addr) {
+      form.elements.type.value = addr.type;
+      form.elements.name.value = addr.name || '';
+      form.elements.street.value = addr.street || '';
+      form.elements.city.value = addr.city || '';
+      form.elements.state.value = addr.state || '';
+      form.elements.zip.value = addr.zip || '';
+      form.elements.phone.value = addr.phone || '';
+    }
+  } catch (e) {
+    if (/401|403/.test(e.message)) location.href = '/login.html';
+    else alert(e.message);
+  }
+}
+document.getElementById('addrForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try {
+    await addressApi.add({
+      type: fd.get('type'), name: fd.get('name'), street: fd.get('street'),
+      city: fd.get('city'), state: fd.get('state'), zip: fd.get('zip'), phone: fd.get('phone')
+    });
+    document.getElementById('addrMsg').textContent = 'Address saved!';
+    document.getElementById('addrMsg').style.color = '#188a18';
+    setTimeout(() => location.href = '/account.html', 1000);
+  } catch (e) { document.getElementById('addrMsg').textContent = e.message; document.getElementById('addrMsg').style.color = '#b12704'; }
+};
+load();
+</script>
+</body>
+</html>

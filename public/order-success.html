@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Successful | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <div class="order-success">
+    <h1>&#10004; Order Successful!</h1>
+    <p>Thank you for shopping with us. Your order has been placed.</p>
+    <div class="section" style="display:inline-block;text-align:left">
+      <div class="row" style="color:#333"><span>Order #:</span><span id="orderNo">-</span></div>
+      <div class="row" style="color:#333"><span>Status:</span><span class="badge badge-shipped" style="margin-left:8px">Processing</span></div>
+      <div class="row" style="color:#333"><span>Estimated delivery:</span><span id="estDate">-</span></div>
+    </div>
+    <div style="margin-top:26px">
+      <a href="/" class="btn btn-orange">Shop Again</a> &nbsp;
+      <a href="/orders.html" class="btn btn-outline">Track Your Order</a>
+    </div>
+  </div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const id = params.get('id');
+async function load(){
+  try {
+    const { order } = await orderApi.get(id);
+    document.getElementById('orderNo').textContent = order.id;
+    document.getElementById('estDate').textContent = new Date(order.created_at).toLocaleDateString();
+  } catch (e) {
+    document.getElementById('orderNo').textContent = id || '-';
+  }
+}
+if (id) load();
+</script>
+</body>
+</html>

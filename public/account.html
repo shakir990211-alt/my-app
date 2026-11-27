@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <h2 class="page-title">My Account</h2>
+  <div class="form-row" style="margin-bottom:20px">
+    <div class="section" style="flex:1">
+      <h3>Hello, <span id="userName"></span></h3>
+      <p><b>Email:</b> <span id="userEmail"></span></p>
+      <p><b>Role:</b> <span id="userRole"></span></p>
+      <a href="/orders.html" class="btn btn-outline" style="padding:8px 14px">View My Orders</a>
+      <a href="/addresses.html" class="btn btn-outline" style="padding:8px 14px">Manage Addresses</a>
+      <a href="/payment-methods.html" class="btn btn-outline" style="padding:8px 14px">Payment Methods</a>
+      <a href="/wishlist.html" class="btn btn-outline" style="padding:8px 14px">Wishlist</a>
+      <button class="btn btn-secondary" style="padding:8px 14px" onclick="logout()">Sign Out</button>
+    </div>
+    <div class="section" style="flex:1">
+      <h3>Account Summary</h3>
+      <p>Orders placed: <b id="orderCount">0</b></p>
+      <p>Default payment method shown on <a href="/payment-methods.html">Payment Methods</a> page.</p>
+    </div>
+  </div>
+  <div class="section">
+    <h3>Notifications</h3>
+    <div id="notifications"></div>
+  </div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+async function load(){
+  try { requireAuth(); } catch {}
+  const user = getUser();
+  document.getElementById('userName').textContent = user.name;
+  document.getElementById('userEmail').textContent = user.email;
+  document.getElementById('userRole').textContent = (user.role || 'customer').charAt(0).toUpperCase() + (user.role || 'customer').slice(1);
+  try {
+    const { orders } = await orderApi.list();
+    document.getElementById('orderCount').textContent = orders.length;
+  } catch {}
+  try {
+    const { notifications } = await notificationApi.list();
+    const el = document.getElementById('notifications');
+    el.innerHTML = notifications.length ? notifications.map(n => `<div style="border-bottom:1px solid #eee;padding:10px 0">${esc(n.message)} <small style="color:#666"> - ${new Date(n.created_at).toLocaleDateString()}</small></div>`).join('') : '<div class="helper">No notifications.</div>';
+  } catch {}
+}
+load();
+</script>
+</body>
+</html>

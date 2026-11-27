@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller Dashboard | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <h2 class="page-title">Seller Dashboard</h2>
+  <div id="sellerMsg" class="helper" style="margin-bottom:14px"></div>
+  <div class="form-row" style="margin-bottom:20px">
+    <div class="section" style="flex:1"><h3>Total Products</h3><p style="font-size:28px;font-weight:700" id="totalProducts">0</p></div>
+    <div class="section" style="flex:1"><h3>Total Sales</h3><p style="font-size:28px;font-weight:700" id="totalSales">₹0</p></div>
+  </div>
+  <div class="section">
+    <h3>Your Products</h3>
+    <div id="sellerProducts"></div>
+  </div>
+  <div class="section" style="margin-top:20px">
+    <h3>Recent Orders (Your Products)</h3>
+    <div id="sellerOrders"></div>
+  </div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function emojiFor(c){ const m = { Electronics:'📱', Mobiles:'📱', Fashion:'👕', 'Home & Kitchen':'🏠', Beauty:'💄', Sports:'🏀', Toys:'🧸', Books:'📚', Grocery:'🥑' }; return m[c] || '📦'; }
+async function load(){
+  try { requireAuth(); } catch {}
+  const user = getUser();
+  if (!user || (user.role !== 'seller' && user.role !== 'admin')) { document.getElementById('sellerMsg').textContent = 'Seller account required.'; document.getElementById('sellerMsg').style.color = '#b12704'; return; }
+  try {
+    const d = await sellerApi.dashboard();
+    document.getElementById('totalProducts').textContent = d.totalProducts;
+    document.getElementById('totalSales').textContent = formatPrice(d.totalSales);
+    const pl = document.getElementById('sellerProducts');
+    if (!d.products.length) pl.innerHTML = '<div class="helper">No products listed yet. <a href="/add-product.html">Add your first product</a>.</div>';
+    else pl.innerHTML = `<table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>${d.products.map(p => `<tr><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${formatPrice(p.price)}</td><td>${p.stock}</td><td><a href="/product/${p.id}" class="btn btn-outline" style="padding:4px 10px;font-size:12px">View</a> <button class="remove-btn" style="font-size:12px" onclick="delProduct(${p.id})">Delete</button></td></tr>`).join('')}</tbody></table>`;
+    const ol = document.getElementById('sellerOrders');
+    if (!d.orders.length) ol.innerHTML = '<div class="helper">No orders yet.</div>';
+    else ol.innerHTML = d.orders.map(o => `<div style="border-bottom:1px solid #eee;padding:10px 0"><b>Order #${o.id}</b> - ${esc(o.user_id ? 'Customer #' + o.user_id : 'Customer')} - ${formatPrice(o.total)} - ${o.status}</div>`).join('');
+  } catch (e) {
+    if (/401|403/.test(e.message)) location.href = '/login.html';
+    else alert(e.message);
+  }
+}
+async function delProduct(id){
+  if (!confirm('Delete this product?')) return;
+  try {
+    await productApi.remove(id);
+    showToast('Product deleted');
+    load();
+  } catch (e) { alert(e.message); }
+}
+load();
+</script>
+</body>
+</html>

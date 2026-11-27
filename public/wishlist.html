@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Wishlist | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <h2 class="page-title">My Wishlist</h2>
+  <div class="product-grid" id="wishGrid"></div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+const EMOJI = { Electronics:'📱', Mobiles:'📱', Fashion:'👕', 'Home & Kitchen':'🏠', Beauty:'💄', Sports:'🏀', Toys:'🧸', Books:'📚', Grocery:'🥑' };
+function emojiFor(c){ return EMOJI[c] || '📦'; }
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+async function load(){
+  try { requireAuth(); } catch {}
+  try {
+    const { wishlist } = await wishlistApi.list();
+    const el = document.getElementById('wishGrid');
+    if (!wishlist.length) { el.innerHTML = '<div class="empty-state"><h2>Your wishlist is empty</h2></div>'; return; }
+    el.innerHTML = wishlist.map(p => `<div class="product-card" style="cursor:pointer" onclick="location.href='/product/${p.product_id}'">
+      <div class="product-image">${emojiFor(p.category)}</div>
+      <div class="product-title">${esc(p.title)}</div>
+      <div class="product-rating">★ ${p.rating} (${p.reviews_count || 0})</div>
+      <div class="product-price">${formatPrice(p.price)}</div>
+      <div class="btn-group">
+        <button class="add-to-cart" onclick="event.stopPropagation(); addToCart(${p.product_id})">Add to Cart</button>
+        <button class="remove-btn" onclick="event.stopPropagation(); removeItem(${p.id})">Remove</button>
+      </div>
+    </div>`).join('');
+  } catch (e) {
+    if (/401|403/.test(e.message)) location.href = '/login.html';
+    else alert(e.message);
+  }
+}
+async function addToCart(id){
+  try {
+    await cartApi.add({ product_id: id, quantity: 1 });
+    showToast('Added to cart');
+    const c = await cartApi.get();
+    document.getElementById('cartCount').textContent = (c.cart || []).length;
+  } catch (e) { alert(e.message); }
+}
+async function removeItem(id){
+  await wishlistApi.remove(id);
+  load();
+}
+load();
+</script>
+</body>
+</html>

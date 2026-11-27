@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <h2 class="page-title">Checkout</h2>
+  <div class="checkout-grid">
+    <div class="section">
+      <h3>Shipping Address</h3>
+      <div id="addressList"></div>
+      <div style="margin-top:12px"><a href="/addresses.html" class="btn btn-outline" style="padding:8px 14px;font-size:13px">Add a new address</a></div>
+    </div>
+    <div class="section">
+      <h3>Payment Method (Demo)</h3>
+      <p class="helper">No real payment gateway integrated. Select a saved method to place the order.</p>
+      <div id="payList"></div>
+    </div>
+  </div>
+  <div class="section">
+    <h3>Order Summary</h3>
+    <div id="orderSummary"></div>
+    <div class="btn-group" style="margin-top:12px">
+      <button class="btn btn-orange" id="placeOrder" style="width:100%;text-align:center">Place Order &rarr; Order Successful!</button>
+    </div>
+  </div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function emojiFor(c){ const m = { Electronics:'📱', Mobiles:'📱', Fashion:'👕', 'Home & Kitchen':'🏠', Beauty:'💄', Sports:'🏀', Toys:'🧸', Books:'📚', Grocery:'🥑' }; return m[c] || '📦'; }
+let addresses = [], payMethods = [];
+async function load(){
+  try { requireAuth(); } catch {}
+  try {
+    const { cart } = await cartApi.get();
+    addresses = (await addressApi.list()).addresses || [];
+    payMethods = (await paymentApi.list()).paymentMethods || [];
+    const addrEl = document.getElementById('addressList');
+    addrEl.innerHTML = addresses.length ? addresses.map(a => `<label style="display:block;border:1px solid #ddd;border-radius:4px;padding:10px;margin:8px 0;cursor:pointer"><input type="radio" name="addr" value="${a.id}" style="margin-right:8px" ${a.is_default ? 'checked' : ''}> <b>${esc(a.name)}</b><br>${esc(a.street)}, ${esc(a.city)}, ${esc(a.state)} ${esc(a.zip)}<br>${esc(a.phone)}</label>`).join('') : '<div class="helper">No addresses saved. <a href="/addresses.html">Add one</a>.</div>';
+    const payEl = document.getElementById('payList');
+    payEl.innerHTML = payMethods.length ? payMethods.map(p => `<div style="margin:8px 0"><input type="radio" name="pay" value="${p.id}" style="margin-right:8px" ${p.is_default ? 'checked' : ''}> <b>${esc(p.type)}</b> ending ${esc(p.last4)} (${esc(p.expiry)})</div>`).join('') : '<div class="helper">No payment methods saved. <a href="/payment-methods.html">Add one</a>.</div>';
+    let total = 0;
+    cart.forEach(i => total += i.price * i.quantity);
+    document.getElementById('orderSummary').innerHTML = cart.map(i => `<div style="display:flex;justify-content:space-between;margin:8px 0"><span>${esc(i.title)} x${i.quantity}</span><span>${formatPrice(i.price * i.quantity)}</span></div>`).join('') + `<hr><div style="display:flex;justify-content:space-between;font-weight:700;font-size:16px"><span>Total</span><span>${formatPrice(total)}</span></div>`;
+  } catch (e) {
+    if (/401|403/.test(e.message)) location.href = '/login.html';
+    else alert(e.message);
+  }
+}
+document.getElementById('placeOrder').onclick = async () => {
+  const sel = document.querySelector('input[name="addr"]:checked');
+  if (!sel) { showToast('Please select a shipping address'); return; }
+  try {
+    const { orderId } = await orderApi.create({ address: sel.value });
+    showToast('Order placed successfully!');
+    location.href = '/order-success.html?id=' + orderId;
+  } catch (e) { alert(e.message); }
+};
+load();
+</script>
+</body>
+</html>

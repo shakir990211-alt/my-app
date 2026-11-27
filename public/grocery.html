@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grocery | Amazon Clone</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div id="nav"></div>
+<main class="container main">
+  <h2 class="page-title">Grocery</h2>
+  <div class="product-grid" id="grid"></div>
+</main>
+<div id="footer"></div>
+<script src="/js/api.js"></script>
+<script src="/js/common.js"></script>
+<script>
+const EMOJI = { Electronics:'📱', Mobiles:'📱', Fashion:'👕', 'Home & Kitchen':'🏠', Beauty:'💄', Sports:'🏀', Toys:'🧸', Books:'📚', Grocery:'🥑' };
+function emojiFor(c){ return EMOJI[c] || '📦'; }
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function cardHtml(p){
+  return `<div class="product-card" style="cursor:pointer" onclick="location.href='/product/${p.id}'"><div class="product-image">${emojiFor(p.category)}</div><div class="product-title">${esc(p.title)}</div><div class="product-rating">★ ${p.rating} (${p.reviews_count || 0})</div><div class="product-price">${formatPrice(p.price)}</div><button class="add-to-cart" onclick="event.stopPropagation(); addToCart(${p.id})">Add to Cart</button></div>`;
+}
+async function addToCart(id){
+  try { await cartApi.add({ product_id: id, quantity: 1 }); showToast('Added to cart'); const c = await cartApi.get(); document.getElementById('cartCount').textContent = (c.cart || []).length; } catch (e) { alert(e.message); }
+}
+async function load(){
+  try { const { products } = await productApi.list({ category: 'Grocery', limit: 60 }); document.getElementById('grid').innerHTML = products.length ? products.map(cardHtml).join('') : '<div class="empty-state"><h2>No products in this category</h2></div>'; } catch (e) { alert(e.message); }
+}
+load();
+</script>
+</body>
+</html>
